@@ -4,7 +4,7 @@ import asyncio
 import logging
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from pyrogram.enums import ParseMode
-from pytgcalls.types import MediaStream
+from pytgcalls.types import MediaStream, AudioQuality, VideoQuality
 from core.call_handler import call_py
 from core.clients import bot
 from services.queue import queue_manager
@@ -36,15 +36,26 @@ async def start_playback(chat_id: int, message: Message):
 
         song_info['file_path'] = file_path
 
+        is_video = song_info.get("is_video", False)
+
+        # Audio normalization and optimization through FFmpeg parameters could be added here
+        # but pytgcalls handles MediaStream(file_path) by default.
+
         await call_py.play(
             chat_id,
-            MediaStream(file_path, video_flags=MediaStream.Flags.IGNORE)
+            MediaStream(
+                file_path,
+                audio_parameters=AudioQuality.STUDIO,
+                video_parameters=VideoQuality.HD720P if is_video else VideoQuality.NO_VIDEO,
+                video_flags=MediaStream.Flags.IGNORE if not is_video else None
+            )
         )
 
         base_caption = (
-            f"<b>🎧 Playing Now</b>\n\n"
+            f"<b>{('🎥' if is_video else '🎧')} Playing Now</b>\n\n"
             f"<b>❍ Title:</b> {title}\n"
-            f"<b>❍ Requested by:</b> {requester}"
+            f"<b>❍ Requested by:</b> {requester}\n"
+            f"<b>❍ Type:</b> {'Video' if is_video else 'Audio'}"
         )
 
         buttons = InlineKeyboardMarkup([
@@ -82,6 +93,9 @@ async def start_playback(chat_id: int, message: Message):
             update_progress(chat_id, playing_msg, duration, base_caption)
         )
 
+        # Preload next song
+        asyncio.create_task(preload_next(chat_id))
+
     except Exception as e:
         await bot.send_message(chat_id, f"❌ Playback Error: {e}")
         queue_manager.pop_from_queue(chat_id)
@@ -115,6 +129,22 @@ async def update_progress(chat_id: int, message: Message, duration: int, base_ca
             pass
 
         await asyncio.sleep(15)
+
+async def preload_next(chat_id: int):
+    queue = queue_manager.get_queue(chat_id)
+    if len(queue) > 1:
+        next_song = queue[1]
+        url = next_song['url']
+        # If it's a local file, it's already "preloaded"
+        if os.path.exists(url):
+            return
+
+        try:
+            # Downloader handles existence check internally
+            await downloader.download(url)
+            logger.info(f"Preloaded: {next_song['title']}")
+        except Exception as e:
+            logger.error(f"Preload error: {e}")
 
 async def stop_playback(chat_id: int):
     try:

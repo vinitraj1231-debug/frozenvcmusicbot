@@ -7,6 +7,10 @@ from config.config import config
 class Downloader:
     def __init__(self):
         self.ydl_opts = config.YDL_OPTS.copy()
+        # Check if cookiefile exists, if not remove it from opts
+        if not os.path.exists(self.ydl_opts.get("cookiefile", "cookies.txt")):
+            self.ydl_opts.pop("cookiefile", None)
+
         self.ydl_opts.update({
             'outtmpl': os.path.join('downloads', 'frozen_%(id)s.%(ext)s'),
             'cachedir': False

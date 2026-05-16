@@ -8,9 +8,10 @@ from services.playback import start_playback
 from config.config import config
 import isodate
 
-@bot.on_message(filters.command("play") & filters.group)
+@bot.on_message(filters.command(["play", "vplay"]) & filters.group)
 async def play_command(_, message: Message):
     chat_id = message.chat.id
+    is_video = message.command[0].lower() == "vplay"
 
     if message.reply_to_message and (message.reply_to_message.audio or message.reply_to_message.video):
         m = await message.reply_text("📥 Processing Telegram file...")
@@ -26,7 +27,8 @@ async def play_command(_, message: Message):
             "file_path": file_path,
             "duration_seconds": media.duration or 0,
             "requester": message.from_user.first_name,
-            "thumbnail": config.DEFAULT_THUMBNAIL
+            "thumbnail": config.DEFAULT_THUMBNAIL,
+            "is_video": is_video or bool(message.reply_to_message.video)
         }
 
         pos = queue_manager.add_to_queue(chat_id, song_info)
@@ -64,7 +66,8 @@ async def play_command(_, message: Message):
                 "url": url,
                 "duration_seconds": duration_seconds,
                 "requester": message.from_user.first_name,
-                "thumbnail": thumbnail
+                "thumbnail": thumbnail,
+                "is_video": is_video
             }
 
             pos = queue_manager.add_to_queue(chat_id, song_info)

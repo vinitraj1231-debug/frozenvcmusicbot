@@ -24,7 +24,8 @@ class Config:
     MAX_DURATION_SECONDS = 900  # 15 minutes
 
     YDL_OPTS = {
-        "format": "251/250/249/bestaudio",
+        "format": "251/250/249/bestaudio/best",
+        "cookiefile": "cookies.txt",
         "quiet": True,
         "geo_bypass": True,
         "nocheckcertificate": True,
@@ -34,6 +35,11 @@ class Config:
         "source_address": "0.0.0.0",
         "http_headers": {
             "User-Agent": "Mozilla/5.0"
+        },
+        "extractor_args": {
+            "youtube": {
+                "player_client": ["android", "web"]
+            }
         }
     }
 
