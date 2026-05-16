@@ -281,7 +281,7 @@ async def fetch_youtube_link(query):
         'nocheckcertificate': True,
         'extractor_args': {
             'youtube': {
-                'player_client': ['android', 'web_safari'],
+                'player_client': ['android', 'ios', 'mweb', 'web_safari'],
                 'player_skip': ['webpage', 'configs']
             }
         },

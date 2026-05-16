@@ -140,12 +140,16 @@ async def vector_transport_resolver(url: str) -> str:
             'nocheckcertificate': True,
             'extractor_args': {
                 'youtube': {
-                    'player_client': ['android', 'web_safari'],
+                    'player_client': ['android', 'ios', 'mweb', 'web_safari'],
                     'player_skip': ['webpage', 'configs']
                 }
             },
             'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'cachedir': False
+            'cachedir': False,
+            'external_downloader': 'ffmpeg',
+            'external_downloader_args': {
+                'ffmpeg': ['-loglevel', 'panic', '-hide_banner', '-nostats']
+            }
         }
 
         def download_sync():
