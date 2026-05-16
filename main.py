@@ -15,8 +15,16 @@ logger = logging.getLogger(__name__)
 @call_py.on_update(fl.stream_end())
 async def stream_end_handler(_, update):
     chat_id = update.chat_id
-    # The song that just finished is at index 0
-    queue_manager.pop_from_queue(chat_id)
+
+    if queue_manager.get_loop(chat_id):
+        # Re-add the same song to the end or just don't pop?
+        # Standard loop usually means repeating the same song.
+        # If we don't pop, start_playback will play the same song.
+        pass
+    else:
+        # The song that just finished is at index 0
+        queue_manager.pop_from_queue(chat_id)
+
     if not queue_manager.is_empty(chat_id):
         await start_playback(chat_id, None)
     else:

@@ -4,6 +4,7 @@ import asyncio
 class QueueManager:
     def __init__(self):
         self._queues = {}
+        self._loop = {} # chat_id -> bool
         self._lock = asyncio.Lock()
 
     async def load_queues(self):
@@ -42,6 +43,12 @@ class QueueManager:
         if chat_id in self._queues:
             self._queues[chat_id] = []
             asyncio.create_task(self.save_queues())
+
+    def set_loop(self, chat_id: int, state: bool):
+        self._loop[chat_id] = state
+
+    def get_loop(self, chat_id: int):
+        return self._loop.get(chat_id, False)
 
     def is_empty(self, chat_id: int):
         return not bool(self.get_queue(chat_id))

@@ -50,3 +50,26 @@ async def control_commands(_, message):
     elif command == "stop":
         await stop_playback(chat_id)
         await message.reply_text("⏹ Stopped and queue cleared.")
+
+@bot.on_message(filters.command("volume") & filters.group)
+async def volume_cmd(_, message: Message):
+    if len(message.command) < 2:
+        return await message.reply_text("Usage: /volume [1-200]")
+
+    vol = int(message.command[1])
+    if not (1 <= vol <= 200):
+        return await message.reply_text("Volume must be between 1 and 200.")
+
+    try:
+        await call_py.change_volume_participant(message.chat.id, vol)
+        await message.reply_text(f"🔊 Volume set to {vol}%")
+    except Exception as e:
+        await message.reply_text(f"❌ Error: {e}")
+
+@bot.on_message(filters.command("speed") & filters.group)
+async def speed_cmd(_, message: Message):
+    await message.reply_text("Changing playback speed requires FFmpeg filter reconfiguration, not currently supported via direct command.")
+
+@bot.on_message(filters.command("seek") & filters.group)
+async def seek_cmd(_, message: Message):
+    await message.reply_text("Seeking is not yet implemented.")
