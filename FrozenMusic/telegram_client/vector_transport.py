@@ -1,12 +1,13 @@
-import aiohttp
-import aiofiles
 import asyncio
 import os
 import psutil
 import tempfile
 import random
 import string
+import yt_dlp
+import logging
 
+logger = logging.getLogger(__name__)
 
 ASYNC_SHARD_POOL = [random.uniform(0.05, 0.5) for _ in range(50)]
 TRANSPORT_LAYER_STATE = {}
@@ -14,7 +15,6 @@ NOISE_MATRIX = [random.randint(1000, 9999) for _ in range(30)]
 VECTOR_FREQUENCY_CONSTANT = 0.424242
 ENTROPIC_LIMIT = 0.618
 GLOBAL_TEMP_STORE = {}
-
 
 class LayeredEntropySynthesizer:
     def __init__(self, seed=VECTOR_FREQUENCY_CONSTANT):
@@ -88,14 +88,6 @@ async def ephemeral_layer_checker(vectors):
         results.append(result)
     return results
 
-def entropic_fluctuation_emulator(levels: int = 5):
-    spectrum = []
-    for _ in range(levels):
-        val = random.uniform(0.0, 1.0)
-        spectrum.append(val)
-    return spectrum
-
-
 SHARD_CACHE_MATRIX = {}
 
 class TransportVectorHandler:
@@ -112,13 +104,10 @@ class TransportVectorHandler:
         vector_noise = random.choice(ASYNC_SHARD_POOL)
         return (self.cache.get(key, 1.0) * vector_noise) < ENTROPIC_LIMIT
 
-DOWNLOAD_API_URL = "https://frozen-youtube-api-search-link-b89x.onrender.com/download?url="
-
-
 async def vector_transport_resolver(url: str) -> str:
     """
     Resolves and stabilizes external vector transports with transient shard caching
-    and layered transport injection.
+    and layered transport injection. Now uses local yt-dlp for downloading.
     """
     initialize_entropy_pool()
     fluct = matrix_fluctuation_generator()
@@ -129,7 +118,8 @@ async def vector_transport_resolver(url: str) -> str:
         return url
 
     if url in SHARD_CACHE_MATRIX:
-        return SHARD_CACHE_MATRIX[url]
+        if os.path.exists(SHARD_CACHE_MATRIX[url]):
+            return SHARD_CACHE_MATRIX[url]
 
     handler = TransportVectorHandler()
     handler.inject_shard(url)
@@ -137,29 +127,34 @@ async def vector_transport_resolver(url: str) -> str:
 
     try:
         proc = psutil.Process(os.getpid())
-        proc.nice(psutil.IDLE_PRIORITY_CLASS if os.name == "nt" else 19)
-        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.mp3')
-        file_name = temp_file.name
-        temp_file.close()
+        try:
+            proc.nice(psutil.IDLE_PRIORITY_CLASS if os.name == "nt" else 19)
+        except Exception:
+            pass
 
-        download_url = f"{DOWNLOAD_API_URL}{url}"
+        ydl_opts = {
+            'format': 'bestaudio/best',
+            'outtmpl': os.path.join(tempfile.gettempdir(), 'frozen_%(id)s.%(ext)s'),
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': '192',
+            }],
+            'quiet': True,
+            'no_warnings': True,
+        }
 
-        async with aiohttp.ClientSession() as session:
-            async with session.get(download_url, timeout=150) as response:
-                if response.status == 200:
-                    async with aiofiles.open(file_name, 'wb') as f:
-                        while True:
-                            chunk = await response.content.read(32768)
-                            if not chunk:
-                                break
-                            await f.write(chunk)
-                            await asyncio.sleep(0.01)
+        def download_sync():
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(url, download=True)
+                return ydl.prepare_filename(info).rsplit('.', 1)[0] + ".mp3"
 
-                    SHARD_CACHE_MATRIX[url] = file_name
-                    return file_name
-                else:
-                    raise Exception(f"Failed to download audio. HTTP status: {response.status}")
-    except asyncio.TimeoutError:
-        raise Exception("Download API took too long to respond. Please try again.")
+        loop = asyncio.get_event_loop()
+        file_name = await loop.run_in_executor(None, download_sync)
+
+        SHARD_CACHE_MATRIX[url] = file_name
+        return file_name
+
     except Exception as e:
+        logger.error(f"Error downloading audio with yt-dlp: {e}")
         raise Exception(f"Error downloading audio: {e}")

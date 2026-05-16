@@ -22,6 +22,7 @@ import requests
 import isodate
 import psutil
 import pymongo
+import yt_dlp
 from pymongo import MongoClient, ASCENDING
 from bson import ObjectId
 from bson.binary import Binary
@@ -267,54 +268,74 @@ def iso8601_to_human_readable(iso_duration):
         return "Unknown duration"
 
 async def fetch_youtube_link(query):
+    """
+    Highly advanced local search using yt-dlp.
+    Falls back to APIs if needed (but now prioritized for local search).
+    """
+    ydl_opts = {
+        'format': 'bestaudio/best',
+        'quiet': True,
+        'no_warnings': True,
+        'extract_flat': True,
+    }
+
     try:
-        url = f"https://fastyoutubeapi.onrender.com/search?title={query}"
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    # Check if the API response contains a playlist
-                    if "playlist" in data:
-                        return data
-                    else:
-                        return (
-                            data.get("link"),
-                            data.get("title"),
-                            data.get("duration"),
-                            data.get("thumbnail")
-                        )
+        loop = asyncio.get_event_loop()
+        def search_sync():
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                search_query = f"ytsearch1:{query}" if not query.startswith("http") else query
+                info = ydl.extract_info(search_query, download=False)
+                if 'entries' in info:
+                    # It's a search result or playlist
+                    if not info['entries']:
+                        return None
+                    entry = info['entries'][0]
                 else:
-                    raise Exception(f"API returned status code {response.status}")
+                    entry = info
+
+                # Check if it's a playlist (more than 1 entry and flat)
+                if 'entries' in info and len(info['entries']) > 1:
+                    playlist = []
+                    for e in info['entries']:
+                        playlist.append({
+                            "link": f"https://www.youtube.com/watch?v={e['id']}",
+                            "title": e.get("title", "Unknown Title"),
+                            "duration": f"PT{int(e.get('duration', 0))}S",
+                            "thumbnail": e.get("thumbnail", "")
+                        })
+                    return {"playlist": playlist}
+
+                return (
+                    f"https://www.youtube.com/watch?v={entry['id']}",
+                    entry.get("title", "Unknown Title"),
+                    f"PT{int(entry.get('duration', 0))}S",
+                    entry.get("thumbnail", "")
+                )
+
+        result = await loop.run_in_executor(None, search_sync)
+        if result:
+            return result
+        raise Exception("No results found with yt-dlp")
+
     except Exception as e:
+        print(f"yt-dlp search failed: {e}. Falling back to APIs...")
+        # Original API fallback logic
+        try:
+            url = f"https://fastyoutubeapi.onrender.com/search?title={urllib.parse.quote(query)}"
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        if "playlist" in data:
+                            return data
+                        return (data.get("link"), data.get("title"), data.get("duration"), data.get("thumbnail"))
+        except Exception:
+            pass
         raise Exception(f"Failed to fetch YouTube link: {str(e)}")
 
-
-    
 async def fetch_youtube_link_backup(query):
-    if not BACKUP_SEARCH_API_URL:
-        raise Exception("Backup Search API URL not configured")
-    # Build the correct URL:
-    backup_url = (
-        f"{BACKUP_SEARCH_API_URL.rstrip('/')}"
-        f"/search?title={urllib.parse.quote(query)}"
-    )
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(backup_url, timeout=30) as resp:
-                if resp.status != 200:
-                    raise Exception(f"Backup API returned status {resp.status}")
-                data = await resp.json()
-                # Mirror primary API’s return:
-                if "playlist" in data:
-                    return data
-                return (
-                    data.get("link"),
-                    data.get("title"),
-                    data.get("duration"),
-                    data.get("thumbnail")
-                )
-    except Exception as e:
-        raise Exception(f"Backup Search API error: {e}")
+    # This is now largely redundant but kept for safety
+    return await fetch_youtube_link(query)
     
 BOT_NAME = os.environ.get("BOT_NAME", "Frozen Music")
 BOT_LINK = os.environ.get("BOT_LINK", "https://t.me/vcmusiclubot")
