@@ -7,6 +7,14 @@ from pytgcalls import filters as fl
 from services.queue import queue_manager
 from services.playback import start_playback, stop_playback, playback_tasks
 from utils.cleaner import auto_cleaner
+from utils.patches import patch_pyrogram
+from utils.cookie_helper import clean_cookies
+
+# Apply monkeypatches
+patch_pyrogram()
+
+# Clean cookies on startup
+clean_cookies("cookies.txt")
 
 logging.basicConfig(
     level=logging.INFO,

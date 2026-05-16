@@ -41,7 +41,7 @@ async def play_command(_, message: Message):
                 await start_playback(chat_id)
                 await m.delete()
             else:
-                await m.edit(f"✅ Added to queue at position {pos-1}")
+                await m.edit(f"<b>✅ Added to queue at position {pos-1}</b>")
         except Exception as e:
             logger.exception(f"Error processing Telegram file: {e}")
             await m.edit(f"❌ Error: {html_escape(str(e))}")
@@ -99,16 +99,17 @@ async def play_command(_, message: Message):
                 first_pos = pos
 
         if first_pos == 1:
-            await m.edit(f"📥 Starting playback...")
+            await m.edit(f"<b>📥 Starting playback...</b>")
             await start_playback(chat_id)
             await m.delete()
         else:
             if added_count > 1:
-                await m.edit(f"✅ Added {added_count} songs to queue.")
+                await m.edit(f"<b>✅ Added {added_count} songs to queue.</b>")
             elif added_count == 1:
-                await m.edit(f"✅ Added to queue at position {first_pos-1}\n**Title:** {html_escape(entries[0].get('title', 'Unknown'))}")
+                title = html_escape(entries[0].get('title', 'Unknown'))
+                await m.edit(f"<b>✅ Added to queue at position {first_pos-1}</b>\n<b>❍ Title:</b> {title}")
             else:
-                await m.edit("❌ No songs could be added to the queue.")
+                await m.edit("<b>❌ No songs could be added to the queue.</b>")
 
     except Exception as e:
         logger.exception(f"Search error: {e}")
