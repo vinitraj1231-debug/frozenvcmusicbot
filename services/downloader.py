@@ -19,26 +19,38 @@ class Downloader:
             os.makedirs('downloads')
 
     async def download(self, url: str):
-        # Generate a unique filename based on URL or ID
-        # Simple hash or use yt-dlp to get ID first
         loop = asyncio.get_event_loop()
 
         def get_info_sync():
             with yt_dlp.YoutubeDL(self.ydl_opts) as ydl:
-                return ydl.extract_info(url, download=False)
+                info = ydl.extract_info(url, download=False)
+                if info is None:
+                    raise Exception("Failed to extract video info")
+
+                # Check if it's just an image or thumbnail (happens sometimes with YouTube music)
+                formats = info.get('formats', [])
+                if not formats and not info.get('url'):
+                     raise Exception("Only images are available for download")
+
+                return info
 
         info = await loop.run_in_executor(None, get_info_sync)
         video_id = info.get('id')
-        ext = info.get('ext', 'webm')
-        expected_filename = os.path.join('downloads', f"frozen_{video_id}.{ext}")
 
-        if os.path.exists(expected_filename):
-            return expected_filename
+        # Check all possible extensions that might have been downloaded previously
+        # since yt-dlp might choose a different one depending on available formats
+        possible_extensions = ['webm', 'm4a', 'mp3', 'mp4', 'opus']
+        for ext in possible_extensions:
+            expected_filename = os.path.join('downloads', f"frozen_{video_id}.{ext}")
+            if os.path.exists(expected_filename):
+                return expected_filename
 
         def download_sync():
             with yt_dlp.YoutubeDL(self.ydl_opts) as ydl:
-                info = ydl.extract_info(url, download=True)
-                return ydl.prepare_filename(info)
+                info_res = ydl.extract_info(url, download=True)
+                if info_res is None:
+                     raise Exception("Download failed, no info returned")
+                return ydl.prepare_filename(info_res)
 
         return await loop.run_in_executor(None, download_sync)
 

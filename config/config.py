@@ -24,7 +24,7 @@ class Config:
     MAX_DURATION_SECONDS = 900  # 15 minutes
 
     YDL_OPTS = {
-        "format": "251/250/249/bestaudio/best",
+        "format": "bestaudio/bestaudio[ext=m4a]/bestaudio[ext=mp4]/bestaudio[ext=webm]/best",
         "cookiefile": "cookies.txt",
         "quiet": True,
         "geo_bypass": True,
@@ -34,11 +34,12 @@ class Config:
         "default_search": "ytsearch",
         "source_address": "0.0.0.0",
         "http_headers": {
-            "User-Agent": "Mozilla/5.0"
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         },
         "extractor_args": {
             "youtube": {
-                "player_client": ["android", "web"]
+                "player_client": ["android", "web", "ios"],
+                "skip": ["dash", "hls"]
             }
         }
     }
