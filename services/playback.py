@@ -75,10 +75,12 @@ async def start_playback(chat_id: int, message: Message = None):
 
         buttons = InlineKeyboardMarkup([
             [
-                InlineKeyboardButton("II", callback_data="pause"),
-                InlineKeyboardButton("▷", callback_data="resume"),
-                InlineKeyboardButton("⏭", callback_data="skip"),
-                InlineKeyboardButton("▢", callback_data="stop")
+                InlineKeyboardButton("⏸ Pause", callback_data="pause"),
+                InlineKeyboardButton("▶️ Resume", callback_data="resume"),
+            ],
+            [
+                InlineKeyboardButton("⏭ Skip", callback_data="skip"),
+                InlineKeyboardButton("⏹ Stop", callback_data="stop")
             ],
             [InlineKeyboardButton(get_progress_bar(0, duration), callback_data="progress")]
         ])
@@ -126,10 +128,12 @@ async def update_progress(chat_id: int, message: Message, duration: int, base_ca
 
             buttons = InlineKeyboardMarkup([
                 [
-                    InlineKeyboardButton("II", callback_data="pause"),
-                    InlineKeyboardButton("▷", callback_data="resume"),
-                    InlineKeyboardButton("⏭", callback_data="skip"),
-                    InlineKeyboardButton("▢", callback_data="stop")
+                    InlineKeyboardButton("⏸ Pause", callback_data="pause"),
+                    InlineKeyboardButton("▶️ Resume", callback_data="resume"),
+                ],
+                [
+                    InlineKeyboardButton("⏭ Skip", callback_data="skip"),
+                    InlineKeyboardButton("⏹ Stop", callback_data="stop")
                 ],
                 [InlineKeyboardButton(get_progress_bar(elapsed, duration), callback_data="progress")]
             ])

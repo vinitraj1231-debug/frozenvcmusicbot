@@ -38,7 +38,8 @@ async def start_private(_, message):
     await message.reply_animation(
         animation="https://frozen-imageapi.lagendplayersyt.workers.dev/file/2e483e17-05cb-45e2-b166-1ea476ce9521.mp4",
         caption=caption,
-        reply_markup=buttons
+        reply_markup=buttons,
+        parse_mode=ParseMode.HTML
     )
 
 @bot.on_message(filters.command("start") & filters.group)

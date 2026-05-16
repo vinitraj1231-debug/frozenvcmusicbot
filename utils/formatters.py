@@ -2,6 +2,8 @@ import isodate
 import html
 
 def html_escape(text: str) -> str:
+    # Remove potentially problematic tags before escaping
+    text = text.replace('<u>', '').replace('</u>', '')
     return html.escape(text, quote=False)
 
 def to_bold_unicode(text: str) -> str:
