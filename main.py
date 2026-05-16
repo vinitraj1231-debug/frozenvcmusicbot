@@ -12,7 +12,7 @@ from utils.cleaner import auto_cleaner
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-@call_py.on_update(fl.stream_end())
+@call_py.on_update(fl.stream_end)
 async def stream_end_handler(_, update):
     chat_id = update.chat_id
 
