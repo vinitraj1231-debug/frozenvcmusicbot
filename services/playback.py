@@ -33,21 +33,36 @@ async def start_playback(chat_id: int, message: Message = None):
         if os.path.exists(url):
             file_path = url
         else:
-            file_path = await downloader.download(url)
+            try:
+                file_path = await downloader.download(url)
+            except Exception as e:
+                logger.error(f"Download failed for {url}: {e}")
+                # Try one last time with a search if it was a direct URL that failed
+                if url.startswith(("http://", "https://")):
+                    logger.info(f"Retrying by searching for title: {song_info['title']}")
+                    search_results = await downloader.search(song_info['title'])
+                    if search_results:
+                        file_path = await downloader.download(search_results[0]['url'])
+                    else:
+                        raise e
+                else:
+                    raise e
 
         song_info['file_path'] = file_path
 
         # Determine streaming parameters
         audio_params = AudioQuality.STUDIO
-        video_params = VideoQuality.HD_720p if is_video else VideoQuality.SD_480p # Default SD if not video
+        video_params = VideoQuality.HD_720p if is_video else VideoQuality.SD_480p
 
+        # Using ffmpeg for better compatibility
         await call_py.play(
             chat_id,
             MediaStream(
                 file_path,
                 audio_parameters=audio_params,
                 video_parameters=video_params,
-                video_flags=MediaStream.Flags.IGNORE if not is_video else MediaStream.Flags.REQUIRED
+                video_flags=MediaStream.Flags.IGNORE if not is_video else MediaStream.Flags.REQUIRED,
+                ffmpeg_parameters="-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5"
             )
         )
 

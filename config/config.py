@@ -24,8 +24,9 @@ class Config:
     MAX_DURATION_SECONDS = 900  # 15 minutes
 
     YDL_OPTS = {
-        "format": "bestaudio[ext=m4a]/bestaudio/best[ext=mp4]/best",
-        "cookiefile": "cookies.txt",
+        "format": "bestaudio[ext=m4a]/bestaudio/best",
+        "js_runtime": "node",
+        "remote_components": ["ejs:github"],
         "quiet": True,
         "geo_bypass": True,
         "nocheckcertificate": True,
@@ -34,14 +35,17 @@ class Config:
         "default_search": "ytsearch",
         "source_address": "0.0.0.0",
         "http_headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
         },
         "extractor_args": {
             "youtube": {
-                "player_client": ["android", "web", "ios"],
-                "skip": ["dash", "hls"]
+                "player_client": ["web", "android"],
+                "player_skip": ["webpage", "ios"]
             }
         },
+        "retries": 5,
+        "fragment_retries": 5,
+        "retry_sleep": 2,
         "postprocessors": [
             {
                 "key": "FFmpegExtractAudio",
