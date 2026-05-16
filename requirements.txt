@@ -1,5 +1,3 @@
-pyrogram
-py-tgcalls
 yt-dlp
 motor
 isodate
@@ -10,3 +8,6 @@ aiofiles
 tgcrypto
 Pillow
 APScheduler
+hydrogram
+py-tgcalls>=2.2.12
+git+https://github.com/kustbots/FrozenGram
