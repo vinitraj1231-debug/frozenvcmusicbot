@@ -24,7 +24,7 @@ class Config:
     MAX_DURATION_SECONDS = 900  # 15 minutes
 
     YDL_OPTS = {
-        "format": "bestaudio/bestaudio[ext=m4a]/bestaudio[ext=mp4]/bestaudio[ext=webm]/best",
+        "format": "bestaudio[ext=m4a]/bestaudio/best[ext=mp4]/best",
         "cookiefile": "cookies.txt",
         "quiet": True,
         "geo_bypass": True,
@@ -41,7 +41,14 @@ class Config:
                 "player_client": ["android", "web", "ios"],
                 "skip": ["dash", "hls"]
             }
-        }
+        },
+        "postprocessors": [
+            {
+                "key": "FFmpegExtractAudio",
+                "preferredcodec": "m4a",
+                "preferredquality": "192",
+            }
+        ],
     }
 
 config = Config()
