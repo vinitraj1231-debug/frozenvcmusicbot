@@ -1,4 +1,8 @@
 import isodate
+import html
+
+def html_escape(text: str) -> str:
+    return html.escape(text, quote=False)
 
 def to_bold_unicode(text: str) -> str:
     bold_text = ""

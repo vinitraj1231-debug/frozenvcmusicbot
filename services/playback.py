@@ -9,7 +9,7 @@ from core.call_handler import call_py
 from core.clients import bot
 from services.queue import queue_manager
 from services.downloader import downloader
-from utils.formatters import get_progress_bar, format_time
+from utils.formatters import get_progress_bar, format_time, html_escape
 from config.config import config
 logger = logging.getLogger(__name__)
 
@@ -21,9 +21,9 @@ async def start_playback(chat_id: int, message: Message):
         return
 
     song_info = queue[0]
-    title = song_info['title']
+    title = html_escape(song_info['title'])
     url = song_info['url']
-    requester = song_info['requester']
+    requester = html_escape(str(song_info['requester']))
     thumbnail = song_info.get('thumbnail', config.DEFAULT_THUMBNAIL)
     duration = song_info.get('duration_seconds', 0)
 
