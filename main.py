@@ -122,6 +122,7 @@ chat_containers = {}
 playback_tasks = {}  
 bot_start_time = time.time()
 COOLDOWN = 10
+DEFAULT_THUMBNAIL = "https://i.ibb.co/TBTk7BvK/4b6e433b651f.jpg"
 chat_last_command = {}
 chat_pending_commands = {}
 QUEUE_LIMIT = 20
@@ -277,6 +278,14 @@ async def fetch_youtube_link(query):
         'quiet': True,
         'no_warnings': True,
         'extract_flat': True,
+        'nocheckcertificate': True,
+        'extractor_args': {
+            'youtube': {
+                'player_client': ['android', 'web_safari'],
+                'player_skip': ['webpage', 'configs']
+            }
+        },
+        'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     }
 
     try:
@@ -597,14 +606,6 @@ async def play_handler(_, message: Message):
             await processing_message.edit(f"❌ Failed to download media: {e}")
             return
 
-        # Download thumbnail if available
-        thumb_path = None
-        try:
-            thumbs = fresh.video.thumbs if fresh.video else fresh.audio.thumbs
-            thumb_path = await bot.download_media(thumbs[0])
-        except Exception:
-            pass
-
         # Prepare song_info and fallback to local playback
         duration = media.duration or 0
         title = getattr(media, 'file_name', 'Untitled')
@@ -614,7 +615,7 @@ async def play_handler(_, message: Message):
             'duration': format_time(duration),
             'duration_seconds': duration,
             'requester': message.from_user.first_name,
-            'thumbnail': thumb_path
+            'thumbnail': DEFAULT_THUMBNAIL
         }
         await fallback_local_playback(chat_id, processing_message, song_info)
         return
@@ -713,7 +714,7 @@ async def process_play_command(message: Message, query: str):
                 "duration": iso8601_to_human_readable(item["duration"]),
                 "duration_seconds": secs,
                 "requester": message.from_user.first_name if message.from_user else "Unknown",
-                "thumbnail": item["thumbnail"]
+                "thumbnail": DEFAULT_THUMBNAIL
             })
 
         total = len(playlist_items)
@@ -756,7 +757,7 @@ async def process_play_command(message: Message, query: str):
             "duration": readable,
             "duration_seconds": secs,
             "requester": message.from_user.first_name if message.from_user else "Unknown",
-            "thumbnail": thumb
+            "thumbnail": DEFAULT_THUMBNAIL
         })
 
         # If it's the first song, start playback immediately using fallback

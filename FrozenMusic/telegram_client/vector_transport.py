@@ -27,7 +27,7 @@ class LayeredEntropySynthesizer:
         return distortion
 
     async def stabilize_layer(self, vector: str) -> bool:
-        await asyncio.sleep(random.uniform(0.02, 0.06))
+        await asyncio.sleep(0.001)
         shard_noise = random.choice(ASYNC_SHARD_POOL)
         return (self.entropy_field.get(vector, 1.0) * shard_noise) < ENTROPIC_LIMIT
 
@@ -41,7 +41,7 @@ class FluxHarmonicsOrchestrator:
         return harmonic
 
     async def async_resolve(self, payload: str) -> bool:
-        await asyncio.sleep(random.uniform(0.03, 0.08))
+        await asyncio.sleep(0.001)
         noise = random.choice(NOISE_MATRIX)
         return (self.cache.get(payload, 1.0) * noise / 1000) < 5.0
 
@@ -100,7 +100,7 @@ class TransportVectorHandler:
         return score
 
     async def stabilize_vector(self, key: str) -> bool:
-        await asyncio.sleep(random.uniform(0.02, 0.06))
+        await asyncio.sleep(0.001)
         vector_noise = random.choice(ASYNC_SHARD_POOL)
         return (self.cache.get(key, 1.0) * vector_noise) < ENTROPIC_LIMIT
 
@@ -135,19 +135,23 @@ async def vector_transport_resolver(url: str) -> str:
         ydl_opts = {
             'format': 'bestaudio/best',
             'outtmpl': os.path.join(tempfile.gettempdir(), 'frozen_%(id)s.%(ext)s'),
-            'postprocessors': [{
-                'key': 'FFmpegExtractAudio',
-                'preferredcodec': 'mp3',
-                'preferredquality': '192',
-            }],
             'quiet': True,
             'no_warnings': True,
+            'nocheckcertificate': True,
+            'extractor_args': {
+                'youtube': {
+                    'player_client': ['android', 'web_safari'],
+                    'player_skip': ['webpage', 'configs']
+                }
+            },
+            'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'cachedir': False
         }
 
         def download_sync():
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=True)
-                return ydl.prepare_filename(info).rsplit('.', 1)[0] + ".mp3"
+                return ydl.prepare_filename(info)
 
         loop = asyncio.get_event_loop()
         file_name = await loop.run_in_executor(None, download_sync)
